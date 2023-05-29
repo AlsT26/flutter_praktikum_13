@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_praktikum_13/user_model.dart';
+import 'package:flutter_praktikum_13/dokter_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -41,7 +41,7 @@ class Tugas12 extends StatefulWidget {
 
 Future<List<Datum>> fetchUser() async {
   final res = await http.get(
-      Uri.parse('https://a25b-103-156-164-13.ngrok-free.app/api/getAllUser'));
+      Uri.parse('https://6699-103-156-164-13.ngrok-free.app/api/getDokter'));
   if (res.statusCode == 200) {
     var data = json.decode(res.body);
     var parsed = data['data'].cast<Map<String, dynamic>>();
@@ -51,8 +51,35 @@ Future<List<Datum>> fetchUser() async {
   }
 }
 
+Future<http.Response> addDokter(
+  nama,
+  spesialis,
+  no_telepon,
+  hari_praktik,
+) async {
+  final res = await http.post(
+    Uri.parse('https://6699-103-156-164-13.ngrok-free.app/api/createDokter'),
+    body: {
+      "nama": nama,
+      "spesialis": spesialis,
+      "no_telepon": no_telepon,
+      "hari_praktik": hari_praktik,
+    },
+  );
+  if (res.statusCode == 200) {
+    return res;
+  } else {
+    throw Exception(res.statusCode);
+  }
+}
+
 class _Tugas12State extends State<Tugas12> {
   late Future<List<Datum>> futureUser;
+
+  final namaController = TextEditingController();
+  final spesialisController = TextEditingController();
+  final teleponController = TextEditingController();
+  final hariPraktikController = TextEditingController();
 
   @override
   void initState() {
@@ -81,8 +108,8 @@ class _Tugas12State extends State<Tugas12> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(snapshot.data![index].name),
-                              Text(snapshot.data![index].nim),
+                              Text(snapshot.data![index].nama),
+                              Text(snapshot.data![index].spesialis),
                             ],
                           ),
                         ),
@@ -95,6 +122,79 @@ class _Tugas12State extends State<Tugas12> {
                   child: CircularProgressIndicator(),
                 );
               }
-            }));
+            }),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Add your onPressed code here!
+            showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return SimpleDialog(
+                    title: const Text("Tambah Data"),
+                    children: [
+                      TextField(
+                        controller: namaController,
+                        decoration: const InputDecoration(
+                          hintText: "nama",
+                          labelText: "nama",
+                          contentPadding: EdgeInsets.all(10),
+                        ),
+                      ),
+                      TextField(
+                        controller: spesialisController,
+                        decoration: const InputDecoration(
+                          hintText: "spesialis",
+                          labelText: "spesialis",
+                          contentPadding: EdgeInsets.all(10),
+                        ),
+                      ),
+                      TextField(
+                        controller: teleponController,
+                        decoration: const InputDecoration(
+                          hintText: "nomor telepon",
+                          labelText: "nomor telepon",
+                          contentPadding: EdgeInsets.all(10),
+                        ),
+                      ),
+                      TextField(
+                        controller: hariPraktikController,
+                        decoration: const InputDecoration(
+                          hintText: "hari praktik",
+                          labelText: "hari praktik",
+                          contentPadding: EdgeInsets.all(10),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          var res = await addDokter(
+                              namaController.text,
+                              spesialisController.text,
+                              teleponController.text,
+                              hariPraktikController.text);
+                          if (res.statusCode != 200) {
+                            throw Exception('Unexpected error occured!');
+                          } else {
+                            setState(() {
+                              futureUser = fetchUser();
+                            });
+                          }
+                          // ignore: use_build_context_synchronously
+                          Navigator.of(context).pop();
+                          var snackBar = const SnackBar(
+                            content: Text('Data berhasil ditambahkan'),
+                          );
+                          // ignore: use_build_context_synchronously
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        },
+                        child: const Text("Tambah"),
+                      ),
+                    ],
+                  );
+                });
+          },
+          child: const Icon(Icons.add),
+          backgroundColor: Colors.green,
+        ));
   }
 }
